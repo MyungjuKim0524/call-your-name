@@ -422,7 +422,7 @@
           <!-- 방명록 작성 폼 (Trie 금칙어 검증 + Rate Limiting 적용) -->
           <form onsubmit="handleGuestbookSubmit(event)" class="p-3.5 bg-amber-50 border-t-[3px] border-[#3e3636] space-y-2">
             <div class="flex items-center justify-between text-[11px] text-stone-500">
-              <span>작성자: <strong id="gbAuthorPreview" class="text-[#3e3636]">친구</strong></span>
+              <span>✉️ 익명으로 따뜻한 마음이 전달됩니다</span>
               <span id="gbValidationMsg" class="text-rose-600 font-bold"></span>
             </div>
             <div class="flex gap-2">
@@ -1379,7 +1379,6 @@
 
     async function openGuestbookModal() {
       playChime(["E5", "B5"], "16n");
-      document.getElementById("gbAuthorPreview").textContent = playerName;
       document.getElementById("gbValidationMsg").textContent = "";
       document.getElementById("guestbookModal").classList.remove("hidden");
       guestbookRepo.subscribeRealtime((entries) => {
@@ -1397,7 +1396,7 @@
       container.innerHTML = list.map((item) => `
         <div class="p-3 rounded-xl bg-amber-50/70 border-2 border-[#3e3636]/20">
           <div class="flex items-center justify-between mb-1">
-            <span class="font-cute text-xs sm:text-sm text-[#3e3636]">${escapeHTML(item.badge)} ${escapeHTML(item.author)}</span>
+            <span class="font-cute text-sm sm:text-base text-[#3e3636]">${escapeHTML(item.badge)}</span>
             <span class="text-[11px] text-stone-400">${escapeHTML(item.createdAt)}</span>
           </div>
           <p class="text-xs sm:text-sm text-stone-700 leading-snug break-words">${escapeHTML(item.message)}</p>
