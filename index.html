@@ -474,7 +474,7 @@
     // ==================== [Supabase 무료 플랜 설정] ====================
     // Supabase 대시보드(무료 티어) -> Project Settings -> API 에서 URL과 anon public key를 붙여넣으세요!
     const SUPABASE_CONFIG = {
-      url: "https://etyvvhsxtrdadvkddagq.supabase.co/rest/v1/",
+      url: "https://etyvvhsxtrdadvkddagq.supabase.co",
       anonKey: "sb_publishable_q62CSolftY9nQKvuNVCSkQ_RGq2Nzfs"
     };
 
@@ -665,8 +665,9 @@
             }
           ]);
           if (error) {
-            throw new Error("서버 저장 중 오류가 발생했어요. 테이블 설정을 확인해주세요.");
+            throw new Error(`DB 저장 오류 (${error.code || "ERR"}): ${error.message}`);
           }
+          await this.loadCloudRows((entries) => renderGuestbookListUI(entries));
           return;
         }
 
