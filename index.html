@@ -397,7 +397,7 @@
               📸 응원 포토카드 저장
             </button>
             <button onclick="openGuestbookModal()" class="py-2.5 px-3 rounded-xl bg-sky-200 hover:bg-sky-300 border-2 border-[#3e3636] font-cute text-xs sm:text-sm text-[#3e3636] shadow-[3px_3px_0px_#3e3636] active:translate-x-[1px] active:translate-y-[1px] transition cursor-pointer">
-              📮 별빛 방명록 (<span id="guestbookCountBadge">4</span>)
+              📮 별빛 방명록 (<span id="guestbookCountBadge">6</span>)
             </button>
           </div>
         </div>
@@ -531,10 +531,12 @@
         this.channel = null;
 
         this.seedEntries = [
-          { id: "seed-1", author: "하늘색 토끼", badge: "🐰", message: "오늘 하루도 정말 고생 많았어! 언제든 오두막에 놀러 와.", createdAt: "오두막 기본 메시지" },
-          { id: "seed-2", author: "아기 늑대", badge: "🐺", message: "기 죽지 마! 너는 네 생각보다 훨씬 멋진 사람이야 진짜아!", createdAt: "오두막 기본 메시지" },
-          { id: "seed-3", author: "아기 리트리버", badge: "🐶", message: "굳이 완벽하지 않아도 괜찮아요, 오늘도 웃을 수 있기를!", createdAt: "오두막 기본 메시지" },
-          { id: "seed-4", author: "기니피그", badge: "🐹", message: "다 잘 될 거예예! 우리가 항상 여기서 응원하고 있을게예 ♡", createdAt: "오두막 기본 메시지" }
+          { id: "seed-5", author: "흰색 족제비", badge: "🦦", message: "시련은 있어도 실패는 없는 법! 힘내요.", createdAt: "오두막 기본 메시지" },
+          { id: "seed-3", author: "아기 늑대", badge: "🐺", message: "기 죽지 마! 너는 네 생각보다 훨씬 멋진 사람이야 진짜아!", createdAt: "오두막 기본 메시지" },
+          { id: "seed-2", author: "기니피그", badge: "🐹", message: "중꺾믿그마!! 저도 응원할게요.", createdAt: "오두막 기본 메시지" },
+          { id: "seed-1", author: "하늘색 토끼", badge: "🐰", message: "오늘 하루도 고생 많았어요! 언제든 오두막에 놀러 와요 사랑해요♡", createdAt: "오두막 기본 메시지" },
+          { id: "seed-4", author: "아기 리트리버", badge: "🐶", message: "굳이 완벽하지 않아도 괜찮아요, 오늘 하루도 웃을 수 있기를!", createdAt: "오두막 기본 메시지" },
+          { id: "seed-6", author: "금색 햄스터", badge: "🐹", message: "오늘도 파이팅구리!!", createdAt: "오두막 기본 메시지" }
         ];
 
         this.entries = this.loadLocalEntries();
@@ -756,7 +758,7 @@
           { id: 4, size: "w-44 h-44 sm:w-52 sm:h-52 char-cling z-10 -mr-6 sm:-mr-8", opts: { extraClass: "" } },
           { id: 2, size: "w-44 h-44 sm:w-52 sm:h-52" }
         ],
-        getText: (name) => `▶ "사랑해예 ♡"\n▶ "${name} 사랑해예, 힘내예 다 괜찮아예 🥹💕"`,
+        getText: (name) => `▶ "사랑해예 💕"\n▶ "${name} 사랑해예, 힘내예 다 괜찮아예 🥹"`,
         next: "13"
       }
     };
