@@ -1560,7 +1560,7 @@
 
       // 전구 가랜드 (2차 베지어 곡선 위에 전구 배치)
       const g0 = { x: P.x - 10, y: P.y + 96 };
-      const gc = { x: P.x + P.w / 2, y: P.y + 200 };
+      const gc = { x: P.x + P.w / 2, y: P.y + 180 };
       const g1 = { x: P.x + P.w + 10, y: P.y + 96 };
       const curveAt = (t) => ({
         x: (1 - t) ** 2 * g0.x + 2 * (1 - t) * t * gc.x + t ** 2 * g1.x,
@@ -1612,6 +1612,118 @@
       ctx.restore();
     }
 
+    // 이름 끝 글자의 받침 유무로 조사를 고른다. 한글이 아니면 "(은)는"처럼 둘 다 표기한다.
+    function josa(word, withBatchim, withoutBatchim) {
+      const code = word.charCodeAt(word.length - 1) - 0xac00;
+      if (code < 0 || code > 11171) return `(${withBatchim})${withoutBatchim}`;
+      return code % 28 ? withBatchim : withoutBatchim;
+    }
+
+    // 포토카드 경로별 구성: 사용자가 고른 고민, 위로한 캐릭터의 답장, 사진 속 배치.
+    // worry는 고민 선택지(화면 5) 문구와 같아야 한다. front 배열의 가운데가 앞줄 중앙이다.
+    const PHOTOCARD_ROUTES = {
+      A: {
+        worry: "지금 하는 게 내 길이 맞는지 모르겠어, 소질 없는 거 같아... 잘할 수 있을까?",
+        speaker: "아기 늑대 🐺",
+        tagColor: "#93c5fd",
+        headline: (n) => `${n}, 기 죽지 마!`,
+        body: () => "연습하면 다 돼. 내가 응원할게 ✊",
+        back: [1, 5, 2],
+        front: [6, 3, 4]
+      },
+      B: {
+        worry: "답을 모르겠는 매일이 두려워... 자존감만 낮아져",
+        speaker: "흰색 족제비 & 금색 햄스터 🦦🐹",
+        tagColor: "#fda4af",
+        headline: (n) => `${n}${josa(n, "은", "는")} 우리의 꿈이고 희망이야`,
+        body: (n) => `불안할 땐 ${n}${josa(n, "을", "를")} 믿는 우리를 믿어요!`,
+        back: [1, 3, 2],
+        front: [6, 5, 4]
+      },
+      C: {
+        worry: "모르겠어, 요즘 그냥 눈물이 막 나...",
+        speaker: "아기 리트리버 & 기니피그 🐶🐹",
+        tagColor: "#6ee7b7",
+        headline: (n) => `${n}, 다 괜찮아예 🥹`,
+        body: () => "굳이 행복하지 않아도 돼요. 하루에 조금씩만 웃을 수 있으면 좋겠어",
+        back: [1, 3, 5],
+        front: [2, 4, 6]
+      }
+    };
+
+    // 주어진 폭에 맞춰 줄을 나눈다. 띄어쓰기 단위로 나누고, 한 단어가 폭을 넘으면 글자 단위로 자른다.
+    function wrapText(ctx, text, maxWidth) {
+      const lines = [];
+      let line = "";
+      for (const word of text.split(" ")) {
+        const candidate = line ? `${line} ${word}` : word;
+        if (ctx.measureText(candidate).width <= maxWidth) {
+          line = candidate;
+          continue;
+        }
+        if (line) lines.push(line);
+        line = "";
+        for (const ch of word) {
+          if (ctx.measureText(line + ch).width > maxWidth && line) {
+            lines.push(line);
+            line = "";
+          }
+          line += ch;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    // 이름표가 달린 대화 말풍선. tail은 사진 쪽을 가리키는 꼬리 방향("up" | "down").
+    function drawSpeechBubble(ctx, { x, y, w, h, tail, tailX, label, labelColor }) {
+      ctx.save();
+      ctx.fillStyle = "rgba(62, 54, 54, 0.18)";
+      roundRectPath(ctx, x + 5, y + 6, w, h, 30);
+      ctx.fill();
+
+      ctx.beginPath();
+      if (tail === "down") {
+        ctx.moveTo(tailX - 16, y + h - 2);
+        ctx.lineTo(tailX + 4, y + h + 24);
+        ctx.lineTo(tailX + 18, y + h - 2);
+      } else {
+        ctx.moveTo(tailX - 16, y + 2);
+        ctx.lineTo(tailX + 4, y - 24);
+        ctx.lineTo(tailX + 18, y + 2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#fffdf5";
+      ctx.fill();
+      ctx.strokeStyle = "#3e3636";
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+
+      roundRectPath(ctx, x, y, w, h, 30);
+      ctx.fillStyle = "#fffdf5";
+      ctx.fill();
+      ctx.stroke();
+      // 꼬리와 말풍선의 경계선을 지워 하나의 모양으로 이어 보이게 한다.
+      ctx.fillStyle = "#fffdf5";
+      ctx.fillRect(tailX - 13, tail === "down" ? y + h - 4 : y - 1, 28, 6);
+
+      ctx.font = "bold 22px 'Jua', sans-serif";
+      const tagW = ctx.measureText(label).width + 40;
+      ctx.translate(x + 26, y - 20);
+      ctx.rotate((-2 * Math.PI) / 180);
+      roundRectPath(ctx, 0, 0, tagW, 40, 20);
+      ctx.fillStyle = labelColor;
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      ctx.fillStyle = "#3e3636";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, 20, 21);
+      ctx.restore();
+    }
+
     async function downloadEndingPhotocard() {
       playChime(["G5", "B5", "D6"], "16n");
       const modal = document.getElementById("photocardModal");
@@ -1620,39 +1732,89 @@
       modal.classList.remove("hidden");
       previewWrap.innerHTML = `<span class="font-cute text-sm text-stone-500 animate-pulse">포토카드를 현상하는 중...</span>`;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = 720;
-      canvas.height = 920;
-      const ctx = canvas.getContext("2d");
+      const route = PHOTOCARD_ROUTES[selectedRoute] || PHOTOCARD_ROUTES.A;
+      const name = playerName;
+      const W = 720;
+      const PAD = 54;
+      const TEXT_W = W - PAD * 2 - 64;
+      const FONT = {
+        worry: "24px 'Jua', sans-serif",
+        headline: "bold 34px 'Jua', sans-serif",
+        body: "21px 'Noto Sans KR', sans-serif",
+        common: "26px 'Jua', sans-serif"
+      };
 
-      const cardGrad = ctx.createLinearGradient(0, 0, 0, 920);
+      // 1) 문구 길이에 따라 줄 수가 달라지므로 먼저 측정해 전체 높이를 정한다.
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const measure = (font, text) => {
+        ctx.font = font;
+        return wrapText(ctx, text, TEXT_W);
+      };
+      const worryLines = measure(FONT.worry, `"${route.worry}"`);
+      const headLines = measure(FONT.headline, route.headline(name));
+      const bodyLines = measure(FONT.body, route.body(name));
+      const commonLines = measure(FONT.common, `${name}, 사랑해! 오늘도 힘내자 우리!!\u00a0💕`); //  : 줄바꿈 때 이모지만 다음 줄로 떨어지지 않게 붙여 둔다
+
+      const worryBox = { x: PAD, y: 78, w: W - PAD * 2, h: 50 + worryLines.length * 36 };
+      const P = { x: PAD, y: worryBox.y + worryBox.h + 34, w: W - PAD * 2, h: 470 };
+      // 답장 말풍선 안의 세로 간격(px): 각 값은 이전 줄 기준선에서 다음 줄 기준선까지의 거리
+      const GAP = { top: 66, head: 44, headToBody: 40, body: 31, bodyToRule: 26, ruleToCommon: 44, common: 34, sign: 32, bottom: 26 };
+      const replyBox = {
+        x: PAD,
+        y: P.y + P.h + 52,
+        w: W - PAD * 2,
+        h: GAP.top + (headLines.length - 1) * GAP.head + GAP.headToBody + (bodyLines.length - 1) * GAP.body +
+          GAP.bodyToRule + GAP.ruleToCommon + (commonLines.length - 1) * GAP.common + GAP.sign + GAP.bottom
+      };
+      const H = replyBox.y + replyBox.h + 96;
+      canvas.width = W;
+      canvas.height = H;
+
+      // 2) 카드 바탕
+      const cardGrad = ctx.createLinearGradient(0, 0, 0, H);
       cardGrad.addColorStop(0, "#fffdf7");
       cardGrad.addColorStop(1, "#fde68a");
       ctx.fillStyle = cardGrad;
-      ctx.fillRect(0, 0, 720, 920);
+      ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = "#3e3636";
       ctx.lineWidth = 10;
-      ctx.strokeRect(24, 24, 672, 872);
+      ctx.strokeRect(24, 24, W - 48, H - 48);
 
-      // 사진 영역
-      const P = { x: 54, y: 54, w: 612, h: 520 };
+      // 3) 사진 위: 사용자의 고민 말풍선
+      drawSpeechBubble(ctx, { ...worryBox, tail: "down", tailX: 150, label: `${name}의 고민`, labelColor: "#fde68a" });
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#57534e";
+      ctx.font = FONT.worry;
+      worryLines.forEach((line, i) => ctx.fillText(line, W / 2, worryBox.y + 50 + i * 36));
+
+      // 4) 단체 사진: 위로한 캐릭터가 앞줄 중앙에 선다. 캐릭터 이미지는 정사각형 비율을 유지한다.
       ctx.save();
       roundRectPath(ctx, P.x, P.y, P.w, P.h, 18);
       ctx.clip();
       drawCabinBackdrop(ctx, P);
 
-      // 단체 사진 배치: 뒷줄 3명은 작고 높게, 앞줄 3명은 카메라에 가까워 크게(다리는 프레임 밖으로 잘림).
-      // 캐릭터 이미지는 정사각형이므로 가로세로 비율을 유지해 그린다. footY는 발끝 위치, tilt는 기울기(도).
       const FOOT_RATIO = 0.91; // viewBox 260 기준 발끝 높이 비율
-      const lineup = [
-        { id: 1, cx: 240, footY: 486, size: 250, tilt: -7 },
-        { id: 3, cx: 360, footY: 478, size: 250, tilt: 0, opts: { showFist: true } },
-        { id: 5, cx: 480, footY: 486, size: 250, tilt: 6 },
-        { id: 6, cx: 210, footY: 622, size: 290, tilt: -4 },
-        { id: 4, cx: 358, footY: 632, size: 290, tilt: 3 },
-        { id: 2, cx: 500, footY: 622, size: 290, tilt: 5 }
+      const bottom = P.y + P.h;
+      const backSlots = [
+        { cx: 240, footY: bottom - 84, size: 250, tilt: -7 },
+        { cx: 360, footY: bottom - 92, size: 250, tilt: 0 },
+        { cx: 480, footY: bottom - 84, size: 250, tilt: 6 }
       ];
-      const images = await Promise.all(lineup.map((c) => loadCharImage(c.id, { smile: true, ...c.opts })));
+      const frontSlots = [
+        { cx: 205, footY: bottom + 52, size: 285, tilt: -5 },
+        { cx: 360, footY: bottom + 50, size: 300, tilt: 2 },
+        { cx: 515, footY: bottom + 52, size: 285, tilt: 5 }
+      ];
+      // 앞줄 중앙(위로한 캐릭터)이 이웃과 겹칠 때 맨 앞에 오도록 가장 나중에 그린다.
+      const lineup = [
+        ...route.back.map((id, i) => ({ id, ...backSlots[i] })),
+        { id: route.front[0], ...frontSlots[0] },
+        { id: route.front[2], ...frontSlots[2] },
+        { id: route.front[1], ...frontSlots[1] }
+      ];
+      const images = await Promise.all(lineup.map((c) => loadCharImage(c.id, { smile: true, showFist: c.id === 3 })));
       lineup.forEach((c, idx) => {
         const img = images[idx];
         if (!img) return;
@@ -1674,26 +1836,40 @@
       ctx.lineWidth = 4;
       ctx.stroke();
 
+      // 5) 사진 아래: 위로한 캐릭터의 답장 + 동물즈 모두의 공통 인사
+      drawSpeechBubble(ctx, { ...replyBox, tail: "up", tailX: W - 170, label: route.speaker, labelColor: route.tagColor });
       ctx.textAlign = "center";
-      ctx.fillStyle = "#3e3636";
-      ctx.font = "bold 44px 'Jua', sans-serif";
-      ctx.fillText(`"${playerName}, 사랑해!"`, 360, 650);
-      ctx.font = "bold 34px 'Jua', sans-serif";
-      ctx.fillText("오늘도 힘내자 우리!! 💕", 360, 705);
-
-      const routeQuotes = {
-        A: "기 죽지 마! 연습하면 다 돼 진짜아 ✨",
-        B: "너는 우리의 꿈이고 희망인걸, 우리를 믿어요!",
-        C: "괜찮아, 굳이 행복하지 않아도 돼요 🥹"
+      const drawLines = (lines, font, color, startY, step) => {
+        ctx.font = font;
+        ctx.fillStyle = color;
+        lines.forEach((line, i) => ctx.fillText(line, W / 2, startY + i * step));
+        return startY + (lines.length - 1) * step; // 마지막 줄 기준선
       };
-      ctx.fillStyle = "#78350f";
-      ctx.font = "22px 'Noto Sans KR', sans-serif";
-      ctx.fillText(routeQuotes[selectedRoute] || routeQuotes.A, 360, 765);
+      let ty = drawLines(headLines, FONT.headline, "#3e3636", replyBox.y + GAP.top, GAP.head);
+      ty = drawLines(bodyLines, FONT.body, "#78350f", ty + GAP.headToBody, GAP.body);
 
+      ty += GAP.bodyToRule;
+      ctx.strokeStyle = "#e7c9a0";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 7]);
+      ctx.beginPath();
+      ctx.moveTo(replyBox.x + 40, ty);
+      ctx.lineTo(replyBox.x + replyBox.w - 40, ty);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ty = drawLines(commonLines, FONT.common, "#be185d", ty + GAP.ruleToCommon, GAP.common);
+      ctx.fillStyle = "#a8a29e";
+      ctx.font = "17px 'Noto Sans KR', sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("— 오두막의 동물즈 모두가 🐾", replyBox.x + replyBox.w - 34, ty + GAP.sign);
+
+      // 6) 하단 날짜
       const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+      ctx.textAlign = "center";
       ctx.fillStyle = "#78716c";
       ctx.font = "18px 'Noto Sans KR', sans-serif";
-      ctx.fillText(`${today} · 마음의 오두막에서`, 360, 845);
+      ctx.fillText(`${today} · 마음의 오두막에서`, W / 2, H - 52);
 
       const dataUrl = canvas.toDataURL("image/png");
       downloadLink.href = dataUrl;
