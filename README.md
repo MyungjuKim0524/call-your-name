@@ -27,7 +27,7 @@
 | 분기형 시나리오 | 세 가지 고민 유형에 따라 대화 및 등장 캐릭터 변경 |
 | 캐릭터 인터랙션 | 6종의 SVG 캐릭터, CSS 애니메이션 및 장면 전환 |
 | 사운드 시스템 | Tone.js 기반 배경음, 효과음, 모닥불 소리 합성 및 ON/OFF |
-| 응원 포토카드 | 이름과 고민 유형을 반영한 720 × 920px PNG 생성 및 다운로드 |
+| 응원 포토카드 | 사용자가 고른 고민과 위로한 캐릭터의 답장을 담은 단체 사진 PNG(가로 720px) 생성 및 다운로드 |
 | 별빛 방명록 | Supabase 기반 메시지 작성·조회 및 신규 등록 이벤트 구독, 로컬 저장 모드 |
 
 모바일과 데스크톱 화면 크기를 고려한 반응형 UI를 제공합니다.
@@ -38,9 +38,9 @@
 | :---: | :---: | :---: | :---: |
 | <img src="docs/assets/screenshots/01-opening.png" width="180" alt="오프닝 화면"> | <img src="docs/assets/screenshots/02-name.png" width="180" alt="이름 입력 화면"> | <img src="docs/assets/screenshots/04-cabin.png" width="180" alt="동물 친구들이 이름을 부르며 반기는 오두막 장면"> | <img src="docs/assets/screenshots/06-choice.png" width="180" alt="고민 선택지 A·B·C"> |
 
-| 경로별 위로 (B) | 엔딩 | 별빛 방명록 |
-| :---: | :---: | :---: |
-| <img src="docs/assets/screenshots/08-route-b-duo.png" width="180" alt="흰색 족제비와 금색 햄스터의 위로 장면"> | <img src="docs/assets/screenshots/09-ending.png" width="180" alt="6마리가 함께 응원하는 엔딩"> | <img src="docs/assets/screenshots/10-guestbook.png" width="180" alt="익명 응원 방명록"> |
+| 경로별 위로 (B) | 엔딩 | 별빛 방명록 | 응원 포토카드 (A) |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/assets/screenshots/08-route-b-duo.png" width="180" alt="흰색 족제비와 금색 햄스터의 위로 장면"> | <img src="docs/assets/screenshots/09-ending.png" width="180" alt="6마리가 함께 응원하는 엔딩"> | <img src="docs/assets/screenshots/10-guestbook.png" width="180" alt="익명 응원 방명록"> | <img src="docs/assets/screenshots/11-photocard.png" width="180" alt="고민과 위로 답장이 담긴 단체 사진 포토카드"> |
 
 > 테스트용 이름(“민지”)과 로컬 저장 모드로 촬영한 화면입니다.
 
@@ -131,6 +131,8 @@ flowchart LR
 ### 브라우저 기반 멀티미디어 처리
 
 - SVG 캐릭터를 Blob 및 이미지 객체로 변환하고 Canvas API에서 배경 및 문구와 합성합니다.
+- 포토카드 문구와 캐릭터 배치는 고민 경로별 설정 데이터(`PHOTOCARD_ROUTES`)로 관리합니다. 사용자가 고른 고민, 위로한 캐릭터의 답장, 앞줄 중앙에 설 캐릭터가 경로마다 달라집니다.
+- 이름 끝 글자의 받침 유무로 은/는, 을/를을 자동 선택하고, 문구 길이에 맞춰 줄바꿈과 카드 높이를 계산합니다.
 - 이미지로 분리된 SVG는 페이지의 공용 필터를 참조할 수 없으므로, 변환 전에 공용 `<defs>`를 각 SVG에 포함합니다. 이 처리가 없으면 iPhone Safari에서 캐릭터가 사라집니다. ([TS-04](docs/troubleshooting.md#ts-04-iphone-safari에서-포토카드-캐릭터가-표시되지-않음))
 - Tone.js의 신시사이저와 노이즈 합성을 활용하여 별도의 음원 파일 없이 사운드를 생성합니다.
 
