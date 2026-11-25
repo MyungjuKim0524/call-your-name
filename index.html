@@ -787,14 +787,15 @@
             dampening: 3200,
             resonance: 0.94,
             release: 1.6,
-            volume: -14
+            volume: -11
           }).connect(reverb);
 
+          // 휴대폰 스피커는 저음(약 260Hz 이하)을 거의 내지 못해, 원래 진행을 한 옥타브 올려 연주
           const notes = [
-            "C3", "G3", "E4", "B3", "C4", "G3", "E4", "G3",
-            "A2", "E3", "C4", "G3", "A3", "E3", "C4", "E3",
-            "F2", "C3", "A3", "E3", "G3", "C3", "A3", "C3",
-            "G2", "D3", "B3", "F#3", "G3", "D3", "B3", "D3"
+            "C4", "G4", "E5", "B4", "C5", "G4", "E5", "G4",
+            "A3", "E4", "C5", "G4", "A4", "E4", "C5", "E4",
+            "F3", "C4", "A4", "E4", "G4", "C4", "A4", "C4",
+            "G3", "D4", "B4", "F#4", "G4", "D4", "B4", "D4"
           ];
           let stepIdx = 0;
 
@@ -813,7 +814,7 @@
           fireNoiseSynth = new Tone.NoiseSynth({
             noise: { type: "pink" },
             envelope: { attack: 0.005, decay: 0.045, sustain: 0, release: 0.02 },
-            volume: -24
+            volume: -18
           }).connect(fireFilter);
 
           const scheduleCrackle = () => {
@@ -826,7 +827,8 @@
           scheduleCrackle();
         }
       } catch (e) {
-        // 오디오 초기화 실패 시 조용히 무시
+        // 오디오가 없어도 서비스는 계속 진행하되, 실패 원인은 확인할 수 있도록 기록
+        console.warn("[audio] 초기화 실패:", e);
       }
     }
 
