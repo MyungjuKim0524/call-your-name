@@ -1,0 +1,14 @@
+# Vercel CLI 로컬 설정 (프로젝트 ID 포함)
+.vercel/
+
+# 환경 변수 파일
+.env
+.env.*
+
+# 운영체제·에디터 생성 파일
+.DS_Store
+Thumbs.db
+.vscode/
+
+# 패키지 설치 폴더
+node_modules/
