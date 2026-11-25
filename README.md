@@ -3,7 +3,7 @@
 > 음악의 정서적 메시지를 개인화된 사용자 참여형 콘텐츠로 재해석한 인터랙티브 힐링 비주얼 노벨
 
 
-https://github.com/user-attachments/assets/b4054ee7-1c21-4d6c-823a-1abb66fd069a
+https://github.com/user-attachments/assets/75c161bf-de0d-47e9-bf40-914ae8d8ed19
 
 
 [Live Demo](https://call-your-name.vercel.app/) · [기획서](docs/planning.md) · [스토리보드](docs/storyboard.md) · [캐릭터 정의서](docs/characters.md) · [AI 협업 기록](docs/ai-collaboration.md) · [트러블슈팅](docs/troubleshooting.md)
