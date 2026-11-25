@@ -200,15 +200,16 @@
   <div id="gameFrame" class="relative w-full h-full max-w-2xl mx-auto overflow-hidden bg-[#fdf8ef] sm:rounded-3xl sm:h-[94vh] sm:border-4 sm:border-[#3e3636] shadow-2xl flex flex-col">
 
     <!-- 상단 상태바 (사운드 토글 & 처음부터 버튼) -->
-    <div class="absolute top-3 left-3 right-3 z-40 flex items-center justify-between pointer-events-none">
-      <div id="sceneBadge" class="px-3 py-1 rounded-full bg-white/90 border-2 border-[#3e3636] font-cute text-xs sm:text-sm text-[#3e3636] shadow-sm">
+    <div class="absolute top-3 left-3 right-3 z-40 flex items-center justify-between gap-2 pointer-events-none">
+      <!-- 좁은 화면에서 줄바꿈되지 않도록 한 줄로 고정하고, 넘치면 말줄임표로 처리 -->
+      <div id="sceneBadge" class="min-w-0 truncate whitespace-nowrap px-3 py-1 rounded-full bg-white/90 border-2 border-[#3e3636] font-cute text-xs sm:text-sm text-[#3e3636] shadow-sm">
         CHAPTER 01 · 오프닝
       </div>
-      <div class="flex items-center gap-2 pointer-events-auto">
-        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1.5 rounded-full bg-white/95 border-2 border-[#3e3636] font-cute text-xs text-[#3e3636] hover:bg-amber-100 shadow-sm cursor-pointer">
-          🎵 음악 & 효과음 ON
+      <div class="flex shrink-0 items-center gap-2 pointer-events-auto">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="whitespace-nowrap px-3 py-1.5 rounded-full bg-white/95 border-2 border-[#3e3636] font-cute text-xs text-[#3e3636] hover:bg-amber-100 shadow-sm cursor-pointer">
+          🎵 <span class="hidden sm:inline">음악 & 효과음 </span><span id="soundToggleState">ON</span>
         </button>
-        <button id="restartTopBtn" onclick="resetGame()" class="hidden px-3 py-1.5 rounded-full bg-amber-100 border-2 border-[#3e3636] font-cute text-xs text-[#3e3636] hover:bg-amber-200 shadow-sm cursor-pointer">
+        <button id="restartTopBtn" onclick="resetGame()" class="hidden whitespace-nowrap px-3 py-1.5 rounded-full bg-amber-100 border-2 border-[#3e3636] font-cute text-xs text-[#3e3636] hover:bg-amber-200 shadow-sm cursor-pointer">
           ↺ 처음부터
         </button>
       </div>
@@ -585,7 +586,8 @@
         const badgeEl = document.getElementById("syncStatusBadge");
         const { data, error } = await this.supabase
           .from("guestbook")
-          .select("id, author, badge, message, created_at")
+          // 작성자 이름은 수집·조회하지 않는다 (익명 방명록)
+          .select("id, badge, message, created_at")
           .order("created_at", { ascending: false })
           .limit(30);
 
@@ -604,7 +606,7 @@
         }
         const mapped = (data || []).map((row) => ({
           id: String(row.id),
-          author: row.author || "익명의 여행자",
+          author: "익명의 여행자",
           badge: row.badge || "✨",
           message: row.message || "",
           createdAt: this.formatRelativeTime(row.created_at)
@@ -640,7 +642,7 @@
         return this.entries.slice(0, limitCount);
       }
 
-      async createEntry(author, message) {
+      async createEntry(message) {
         const now = Date.now();
         if (now - this.lastPostTimestamp < this.RATE_LIMIT_MS) {
           const waitSec = Math.ceil((this.RATE_LIMIT_MS - (now - this.lastPostTimestamp)) / 1000);
@@ -650,17 +652,15 @@
         if (trimmed.length < 2 || trimmed.length > 60) {
           throw new Error("응원 메시지는 2자 이상 60자 이하로 입력해주세요.");
         }
-        if (contentFilter.containsBadWord(trimmed) || contentFilter.containsBadWord(author)) {
+        if (contentFilter.containsBadWord(trimmed)) {
           throw new Error("따뜻한 오두막을 위해 부적절한 단어는 사용할 수 없어요.");
         }
         this.lastPostTimestamp = now;
         const chosenBadge = "✉️";
-        const safeAuthor = author || "익명의 여행자";
 
         if (this.isCloudMode && this.supabase) {
           const { error } = await this.supabase.from("guestbook").insert([
             {
-              author: safeAuthor,
               badge: chosenBadge,
               message: trimmed
             }
@@ -674,7 +674,7 @@
 
         const newEntry = {
           id: `msg-${now}`,
-          author: safeAuthor,
+          author: "익명의 여행자",
           badge: chosenBadge,
           message: trimmed,
           createdAt: "방금 전"
@@ -843,8 +843,9 @@
 
     function toggleSound() {
       soundEnabled = !soundEnabled;
+      // 좁은 화면에서는 "음악 & 효과음" 문구를 숨기고 아이콘과 상태만 표시
       const btn = document.getElementById("soundToggleBtn");
-      btn.textContent = soundEnabled ? "🎵 음악 & 효과음 ON" : "🔇 음악 & 효과음 OFF";
+      btn.innerHTML = `${soundEnabled ? "🎵" : "🔇"} <span class="hidden sm:inline">음악 & 효과음 </span><span id="soundToggleState">${soundEnabled ? "ON" : "OFF"}</span>`;
 
       if (typeof Tone !== "undefined") {
         if (soundEnabled) {
@@ -862,6 +863,16 @@
       const animClass = options.extraClass !== undefined ? options.extraClass : "char-idle";
       const showFist = options.showFist || false;
       const flip = options.flip ? 'transform="translate(260, 0) scale(-1, 1)"' : "";
+      // 포토카드 단체 사진용 웃는 표정 (스토리 화면의 기본 표정은 유지)
+      const smile = options.smile || false;
+      const happyEyes = (lx, rx, y) => [lx, rx].map((x) =>
+        `<path d="M ${x - 8.5} ${y + 3} Q ${x} ${y - 8} ${x + 8.5} ${y + 3}" fill="none" stroke="#2e2626" stroke-width="3.6" stroke-linecap="round"/>`
+      ).join("");
+      const softBrows = (lx, rx, y) => [lx, rx].map((x) =>
+        `<path d="M ${x - 7} ${y + 1} Q ${x} ${y - 3} ${x + 7} ${y + 1}" fill="none" stroke="#3e3636" stroke-width="2.4" stroke-linecap="round"/>`
+      ).join("");
+      const openSmile = (y) =>
+        `<path d="M 121 ${y} Q 130 ${y + 3} 139 ${y} Q 137.5 ${y + 11} 130 ${y + 11} Q 122.5 ${y + 11} 121 ${y} Z" fill="#ff8fa3" stroke="#3e3636" stroke-width="2.4" stroke-linejoin="round"/>`;
 
       switch (id) {
         case 1:
@@ -889,12 +900,13 @@
                   <path d="M 90 101 C 90 77 107 67 130 67 C 153 67 170 77 170 101 C 170 121 151 133 130 133 C 109 133 90 121 90 101 Z" fill="#e8f6fd" stroke="#3e3636" stroke-width="3.5"/>
                   <path d="M 104 88.5 Q 112 87 120 88.8" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round"/>
                   <path d="M 156 88.5 Q 148 87 140 88.8" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round"/>
+                  ${smile ? happyEyes(112, 148, 102) : `
                   <ellipse cx="112" cy="102.5" rx="7.9" ry="10.8" fill="#2e2626"/>
                   <ellipse cx="111.5" cy="98" rx="3.9" ry="4.8" fill="#ffffff"/>
                   <ellipse cx="112.5" cy="108" rx="3.1" ry="1.7" fill="#a5d8ff" opacity="0.75"/>
                   <ellipse cx="148" cy="102.5" rx="7.9" ry="10.8" fill="#2e2626"/>
                   <ellipse cx="148.5" cy="98" rx="3.9" ry="4.8" fill="#ffffff"/>
-                  <ellipse cx="147.5" cy="108" rx="3.1" ry="1.7" fill="#a5d8ff" opacity="0.75"/>
+                  <ellipse cx="147.5" cy="108" rx="3.1" ry="1.7" fill="#a5d8ff" opacity="0.75"/>`}
                   <ellipse cx="98" cy="115" rx="11.5" ry="7" fill="url(#blushPink)"/>
                   <ellipse cx="162" cy="115" rx="11.5" ry="7" fill="url(#blushPink)"/>
                   <ellipse cx="130" cy="113" rx="2.5" ry="1.7" fill="#473c3c"/>
@@ -932,12 +944,14 @@
                   <ellipse cx="162" cy="117" rx="12.5" ry="8" fill="url(#blushPink)"/>
                   <path d="M 103 97 Q 110 94.5 117 97" fill="none" stroke="#3e3636" stroke-width="2.4" stroke-linecap="round"/>
                   <path d="M 157 97 Q 150 94.5 143 97" fill="none" stroke="#3e3636" stroke-width="2.4" stroke-linecap="round"/>
+                  ${smile ? happyEyes(110, 150, 107) : `
                   <ellipse cx="110" cy="108" rx="7.2" ry="8" fill="#6b442a"/>
                   <circle cx="108.2" cy="105.5" r="2.4" fill="#ffffff"/>
                   <ellipse cx="150" cy="108" rx="7.2" ry="8" fill="#6b442a"/>
-                  <circle cx="148.2" cy="105.5" r="2.4" fill="#ffffff"/>
+                  <circle cx="148.2" cy="105.5" r="2.4" fill="#ffffff"/>`}
                   <ellipse cx="130" cy="118" rx="3.8" ry="2.5" fill="#593c2c"/>
-                  <path d="M 124 125 Q 127.5 128 130 123.5 Q 132.5 128 136 125" fill="none" stroke="#3e3636" stroke-width="2.3" stroke-linecap="round"/>
+                  ${smile ? openSmile(123) : `
+                  <path d="M 124 125 Q 127.5 128 130 123.5 Q 132.5 128 136 125" fill="none" stroke="#3e3636" stroke-width="2.3" stroke-linecap="round"/>`}
                 </g>
               </g>
             </svg>`;
@@ -980,6 +994,7 @@
                   <ellipse cx="165" cy="113" rx="12" ry="7.5" fill="url(#blushPink)"/>
                   <path d="M 98 86 L 115 91" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round"/>
                   <path d="M 162 86 L 145 91" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round"/>
+                  ${smile ? happyEyes(109, 151, 100) : `
                   <ellipse cx="109" cy="100.5" rx="7.2" ry="8.2" transform="rotate(-6 109 100.5)" fill="#2e2626"/>
                   <path d="M 99 91 L 118 94 L 118 97.5 L 99 94.5 Z" fill="#fffefc"/>
                   <line x1="99" y1="94.5" x2="118" y2="97.5" stroke="#3e3636" stroke-width="2.8" stroke-linecap="round"/>
@@ -987,9 +1002,11 @@
                   <ellipse cx="151" cy="100.5" rx="7.2" ry="8.2" transform="rotate(6 151 100.5)" fill="#2e2626"/>
                   <path d="M 142 94 L 161 91 L 161 94.5 L 142 97.5 Z" fill="#fffefc"/>
                   <line x1="142" y1="97.5" x2="161" y2="94.5" stroke="#3e3636" stroke-width="2.8" stroke-linecap="round"/>
-                  <circle cx="149" cy="99.5" r="2.3" fill="#ffffff"/>
+                  <circle cx="149" cy="99.5" r="2.3" fill="#ffffff"/>`}
                   <ellipse cx="130" cy="113" rx="5" ry="3.4" fill="#3e3636"/>
-                  <path d="M 120 121 Q 130 129 141 119" fill="none" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>
+                  ${smile ? `
+                  <path d="M 119 119.5 Q 130 122.5 141 119 Q 138.5 132 130 132 Q 121.5 132 119 119.5 Z" fill="#ff8fa3" stroke="#3e3636" stroke-width="2.4" stroke-linejoin="round"/>` : `
+                  <path d="M 120 121 Q 130 129 141 119" fill="none" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>`}
                   <polygon points="135,121 138,126.5 140.5,120" fill="#ffffff" stroke="#3e3636" stroke-width="1.8" stroke-linejoin="round"/>
                 </g>
               </g>
@@ -1027,6 +1044,7 @@
                   <path d="M 84 103 C 84 72 104 58 130 58 C 156 58 176 72 176 103 C 180 128 158 145 130 145 C 102 145 80 128 84 103 Z" fill="#f7d5a3" stroke="#3e3636" stroke-width="3.5"/>
                   <ellipse cx="95" cy="116" rx="13" ry="8" fill="url(#blushPeach)"/>
                   <ellipse cx="165" cy="116" rx="13" ry="8" fill="url(#blushPeach)"/>
+                  ${smile ? softBrows(108, 152, 88) + happyEyes(109, 151, 104) : `
                   <path d="M 99 88 L 116 93" stroke="#3e3636" stroke-width="2.8" stroke-linecap="round"/>
                   <path d="M 161 88 L 144 93" stroke="#3e3636" stroke-width="2.8" stroke-linecap="round"/>
                   <circle cx="109" cy="104" r="9.5" fill="#2e2626"/>
@@ -1034,7 +1052,7 @@
                   <circle cx="112" cy="107" r="1.8" fill="#ffffff"/>
                   <circle cx="151" cy="104" r="9.5" fill="#2e2626"/>
                   <circle cx="147.5" cy="100" r="3.6" fill="#ffffff"/>
-                  <circle cx="154" cy="107" r="1.8" fill="#ffffff"/>
+                  <circle cx="154" cy="107" r="1.8" fill="#ffffff"/>`}
                   <ellipse cx="130" cy="113" rx="5.2" ry="3.6" fill="#3e3636"/>
                   <path d="M 119 121 Q 130 124 141 121 Q 139 135 130 135 Q 121 135 119 121 Z" fill="#ff8fa3" stroke="#3e3636" stroke-width="2.6" stroke-linejoin="round"/>
                 </g>
@@ -1075,12 +1093,14 @@
                   <ellipse cx="163" cy="115" rx="13" ry="8" fill="url(#blushPink)"/>
                   <path d="M 98 93 Q 108 91.5 118 93.5" fill="none" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>
                   <path d="M 162 93 Q 152 91.5 142 93.5" fill="none" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>
+                  ${smile ? happyEyes(108, 152, 104) : `
                   <rect x="98" y="100" width="20" height="8.5" rx="4.2" fill="#2e2626"/>
                   <circle cx="108" cy="103.5" r="2.1" fill="#ffffff"/>
                   <rect x="142" y="100" width="20" height="8.5" rx="4.2" fill="#2e2626"/>
-                  <circle cx="152" cy="103.5" r="2.1" fill="#ffffff"/>
+                  <circle cx="152" cy="103.5" r="2.1" fill="#ffffff"/>`}
                   <ellipse cx="130" cy="114" rx="4.2" ry="2.8" fill="#3e3636"/>
-                  <path d="M 122 123 Q 130 128 138 123" fill="none" stroke="#3e3636" stroke-width="2.5" stroke-linecap="round"/>
+                  ${smile ? openSmile(121) : `
+                  <path d="M 122 123 Q 130 128 138 123" fill="none" stroke="#3e3636" stroke-width="2.5" stroke-linecap="round"/>`}
                 </g>
               </g>
             </svg>`;
@@ -1112,14 +1132,16 @@
                   <path d="M 83 105 C 81 68 108 56 130 56 C 152 56 179 68 177 105 C 181 134 158 147 130 147 C 102 147 79 134 83 105 Z" fill="none" stroke="#3e3636" stroke-width="3.5"/>
                   <ellipse cx="94" cy="118" rx="14" ry="8.5" fill="url(#blushPink)"/>
                   <ellipse cx="166" cy="118" rx="14" ry="8.5" fill="url(#blushPink)"/>
+                  ${smile ? softBrows(108, 152, 93) + happyEyes(108, 152, 106) : `
                   <path d="M 100 93 L 115 96" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>
                   <path d="M 160 93 L 145 96" stroke="#3e3636" stroke-width="2.6" stroke-linecap="round"/>
                   <circle cx="108" cy="106" r="7.2" fill="#2e2626"/>
                   <circle cx="106" cy="103.5" r="2.3" fill="#ffffff"/>
                   <circle cx="152" cy="106" r="7.2" fill="#2e2626"/>
-                  <circle cx="150" cy="103.5" r="2.3" fill="#ffffff"/>
+                  <circle cx="150" cy="103.5" r="2.3" fill="#ffffff"/>`}
                   <ellipse cx="130" cy="114" rx="4" ry="2.7" fill="#3e3636"/>
-                  <path d="M 124 124 L 130 120 L 136 124" fill="none" stroke="#3e3636" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  ${smile ? openSmile(120.5) : `
+                  <path d="M 124 124 L 130 120 L 136 124" fill="none" stroke="#3e3636" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`}
                 </g>
               </g>
             </svg>`;
@@ -1412,7 +1434,7 @@
       const errEl = document.getElementById("gbValidationMsg");
       try {
         errEl.textContent = "";
-        await guestbookRepo.createEntry(playerName, inputEl.value);
+        await guestbookRepo.createEntry(inputEl.value);
         inputEl.value = "";
         playChime(["C5", "E5", "G5", "C6"], "16n");
         if (!guestbookRepo.isCloudMode) {
@@ -1435,11 +1457,274 @@
     // 캐릭터는 페이지 공용 <defs>의 크레용 필터(#crayonBrush)와 볼터치 그라데이션을 url(#...)로 참조하는데,
     // Blob 이미지로 분리된 SVG는 페이지 DOM에 접근할 수 없어 필터 참조가 끊기고 캐릭터 전체가 렌더링되지 않는다.
     // 따라서 공용 <defs>를 각 SVG 내부에 복사해 자체 완결된 문서로 만든다.
-    function serializeCharSVG(id) {
+    function serializeCharSVG(id, opts = {}) {
       const sharedDefs = document.getElementById("sharedSvgDefs").outerHTML;
-      return getCharSVG(id, { extraClass: "" })
+      return getCharSVG(id, { ...opts, extraClass: "" })
         .replace('class="w-full h-full svg-char "', 'width="220" height="220" xmlns="http://www.w3.org/2000/svg"')
         .replace(/<svg[^>]*>/, (openTag) => openTag + sharedDefs);
+    }
+
+    function loadCharImage(id, opts) {
+      return new Promise((resolve) => {
+        const blob = new Blob([serializeCharSVG(id, opts)], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve(null);
+        };
+        img.src = url;
+      });
+    }
+
+    // iOS 15 이하 Safari는 ctx.roundRect를 지원하지 않으므로 직접 경로를 만든다.
+    function roundRectPath(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // 단체 사진 배경: 오두막 나무 벽, 전구 가랜드, 현판, 러그, 모닥불 조명
+    function drawCabinBackdrop(ctx, P) {
+      const wallGrad = ctx.createLinearGradient(0, P.y, 0, P.y + P.h);
+      wallGrad.addColorStop(0, "#6b4429");
+      wallGrad.addColorStop(1, "#4a2c1a");
+      ctx.fillStyle = wallGrad;
+      ctx.fillRect(P.x, P.y, P.w, P.h);
+
+      // 세로 나무 판자
+      for (let px = P.x, i = 0; px < P.x + P.w; px += 51, i++) {
+        ctx.fillStyle = i % 2 ? "rgba(255, 220, 170, 0.04)" : "rgba(0, 0, 0, 0.06)";
+        ctx.fillRect(px, P.y, 51, P.h);
+        ctx.fillStyle = "rgba(30, 15, 5, 0.35)";
+        ctx.fillRect(px, P.y, 2, P.h);
+      }
+
+      // 바닥과 러그
+      const floorY = P.y + P.h - 96;
+      ctx.fillStyle = "#7a4e31";
+      ctx.fillRect(P.x, floorY, P.w, P.h - (floorY - P.y));
+      ctx.fillStyle = "rgba(30, 15, 5, 0.3)";
+      ctx.fillRect(P.x, floorY, P.w, 4);
+      ctx.fillStyle = "#b45309";
+      ctx.beginPath();
+      ctx.ellipse(P.x + P.w / 2, floorY + 58, 300, 54, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#fcd34d";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 8]);
+      ctx.beginPath();
+      ctx.ellipse(P.x + P.w / 2, floorY + 58, 270, 42, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 모닥불 빛
+      const fireGlow = ctx.createRadialGradient(P.x + P.w / 2, P.y + P.h, 30, P.x + P.w / 2, P.y + P.h, 420);
+      fireGlow.addColorStop(0, "rgba(255, 190, 90, 0.5)");
+      fireGlow.addColorStop(1, "rgba(255, 190, 90, 0)");
+      ctx.fillStyle = fireGlow;
+      ctx.fillRect(P.x, P.y, P.w, P.h);
+
+      // 보케 (위치 고정: 매번 같은 결과)
+      [[110, 210, 18], [190, 160, 10], [560, 190, 22], [630, 260, 12], [90, 330, 14],
+       [600, 360, 9], [470, 140, 8], [250, 250, 7], [520, 280, 11], [150, 420, 9]]
+        .forEach(([bx, by, br]) => {
+          ctx.fillStyle = "rgba(255, 228, 160, 0.16)";
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+      // 현판 (오프닝 화면의 부제와 같은 문구, 글자 길이에 맞춰 너비 결정)
+      const plaqueText = "24/7 WITH YOU · CALL YOUR NAME";
+      ctx.font = "bold 24px 'Jua', sans-serif";
+      const plaqueW = ctx.measureText(plaqueText).width + 52;
+      ctx.fillStyle = "#3e2518";
+      ctx.fillRect(P.x + P.w / 2 - 2, P.y, 4, 24);
+      roundRectPath(ctx, P.x + P.w / 2 - plaqueW / 2, P.y + 22, plaqueW, 50, 12);
+      ctx.fillStyle = "#fef3c7";
+      ctx.fill();
+      ctx.strokeStyle = "#3e3636";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.fillStyle = "#92400e";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(plaqueText, P.x + P.w / 2, P.y + 48);
+      ctx.textBaseline = "alphabetic";
+
+      // 전구 가랜드 (2차 베지어 곡선 위에 전구 배치)
+      const g0 = { x: P.x - 10, y: P.y + 96 };
+      const gc = { x: P.x + P.w / 2, y: P.y + 180 };
+      const g1 = { x: P.x + P.w + 10, y: P.y + 96 };
+      const curveAt = (t) => ({
+        x: (1 - t) ** 2 * g0.x + 2 * (1 - t) * t * gc.x + t ** 2 * g1.x,
+        y: (1 - t) ** 2 * g0.y + 2 * (1 - t) * t * gc.y + t ** 2 * g1.y
+      });
+      ctx.strokeStyle = "#2b1a10";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(g0.x, g0.y);
+      ctx.quadraticCurveTo(gc.x, gc.y, g1.x, g1.y);
+      ctx.stroke();
+      const bulbColors = ["#fde68a", "#fda4af", "#a7f3d0", "#bfdbfe"];
+      for (let i = 1; i < 14; i++) {
+        const { x, y } = curveAt(i / 14);
+        const color = bulbColors[i % bulbColors.length];
+        const glow = ctx.createRadialGradient(x, y + 10, 2, x, y + 10, 26);
+        glow.addColorStop(0, color);
+        glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = glow;
+        ctx.fillRect(x - 26, y - 16, 52, 52);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#2b1a10";
+        ctx.fillRect(x - 3.5, y - 2, 7, 6);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(x, y + 11, 6.5, 8.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 사진 마감: 가장자리 비네팅 + 필름 카메라 날짜 스탬프
+    function drawPhotoFinish(ctx, P) {
+      const vignette = ctx.createRadialGradient(P.x + P.w / 2, P.y + P.h / 2, P.h * 0.35, P.x + P.w / 2, P.y + P.h / 2, P.h * 0.85);
+      vignette.addColorStop(0, "rgba(30, 15, 5, 0)");
+      vignette.addColorStop(1, "rgba(30, 15, 5, 0.4)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(P.x, P.y, P.w, P.h);
+
+      const now = new Date();
+      const stamp = `'${String(now.getFullYear()).slice(2)} ${String(now.getMonth() + 1).padStart(2, "0")} ${String(now.getDate()).padStart(2, "0")}`;
+      ctx.save();
+      ctx.font = "bold 20px 'Courier New', monospace";
+      ctx.textAlign = "right";
+      ctx.shadowColor = "rgba(255, 140, 40, 0.9)";
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = "#ffab4d";
+      ctx.fillText(stamp, P.x + P.w - 16, P.y + P.h - 14);
+      ctx.restore();
+    }
+
+    // 이름 끝 글자의 받침 유무로 조사를 고른다. 한글이 아니면 "(은)는"처럼 둘 다 표기한다.
+    function josa(word, withBatchim, withoutBatchim) {
+      const code = word.charCodeAt(word.length - 1) - 0xac00;
+      if (code < 0 || code > 11171) return `(${withBatchim})${withoutBatchim}`;
+      return code % 28 ? withBatchim : withoutBatchim;
+    }
+
+    // 포토카드 경로별 구성: 사용자가 고른 고민, 위로한 캐릭터의 답장, 사진 속 배치.
+    // worry는 고민 선택지(화면 5) 문구와 같아야 한다. front 배열의 가운데가 앞줄 중앙이다.
+    const PHOTOCARD_ROUTES = {
+      A: {
+        worry: "지금 하는 게 내 길이 맞는지 모르겠어, 소질 없는 거 같아... 잘할 수 있을까?",
+        speaker: "아기 늑대 🐺",
+        tagColor: "#93c5fd",
+        headline: (n) => `${n}, 기 죽지 마!`,
+        body: () => "연습하면 다 돼. 내가 응원할게 ✊",
+        back: [1, 5, 2],
+        front: [6, 3, 4]
+      },
+      B: {
+        worry: "답을 모르겠는 매일이 두려워... 자존감만 낮아져",
+        speaker: "흰색 족제비 & 금색 햄스터 🦦🐹",
+        tagColor: "#fda4af",
+        headline: (n) => `${n}${josa(n, "은", "는")} 우리의 꿈이고 희망이야`,
+        body: (n) => `불안할 땐 ${n}${josa(n, "을", "를")} 믿는 우리를 믿어요!`,
+        back: [1, 3, 2],
+        front: [6, 5, 4]
+      },
+      C: {
+        worry: "모르겠어, 요즘 그냥 눈물이 막 나...",
+        speaker: "아기 리트리버 & 기니피그 🐶🐹",
+        tagColor: "#6ee7b7",
+        headline: (n) => `${n}, 다 괜찮아예 🥹`,
+        body: () => "굳이 행복하지 않아도 돼요. 하루에 조금씩만 웃을 수 있으면 좋겠어",
+        back: [1, 3, 5],
+        front: [2, 4, 6]
+      }
+    };
+
+    // 주어진 폭에 맞춰 줄을 나눈다. 띄어쓰기 단위로 나누고, 한 단어가 폭을 넘으면 글자 단위로 자른다.
+    function wrapText(ctx, text, maxWidth) {
+      const lines = [];
+      let line = "";
+      for (const word of text.split(" ")) {
+        const candidate = line ? `${line} ${word}` : word;
+        if (ctx.measureText(candidate).width <= maxWidth) {
+          line = candidate;
+          continue;
+        }
+        if (line) lines.push(line);
+        line = "";
+        for (const ch of word) {
+          if (ctx.measureText(line + ch).width > maxWidth && line) {
+            lines.push(line);
+            line = "";
+          }
+          line += ch;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    // 이름표가 달린 대화 말풍선. tail은 사진 쪽을 가리키는 꼬리 방향("up" | "down").
+    function drawSpeechBubble(ctx, { x, y, w, h, tail, tailX, label, labelColor }) {
+      ctx.save();
+      ctx.fillStyle = "rgba(62, 54, 54, 0.18)";
+      roundRectPath(ctx, x + 5, y + 6, w, h, 30);
+      ctx.fill();
+
+      ctx.beginPath();
+      if (tail === "down") {
+        ctx.moveTo(tailX - 16, y + h - 2);
+        ctx.lineTo(tailX + 4, y + h + 24);
+        ctx.lineTo(tailX + 18, y + h - 2);
+      } else {
+        ctx.moveTo(tailX - 16, y + 2);
+        ctx.lineTo(tailX + 4, y - 24);
+        ctx.lineTo(tailX + 18, y + 2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#fffdf5";
+      ctx.fill();
+      ctx.strokeStyle = "#3e3636";
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+
+      roundRectPath(ctx, x, y, w, h, 30);
+      ctx.fillStyle = "#fffdf5";
+      ctx.fill();
+      ctx.stroke();
+      // 꼬리와 말풍선의 경계선을 지워 하나의 모양으로 이어 보이게 한다.
+      ctx.fillStyle = "#fffdf5";
+      ctx.fillRect(tailX - 13, tail === "down" ? y + h - 4 : y - 1, 28, 6);
+
+      ctx.font = "bold 22px 'Jua', sans-serif";
+      const tagW = ctx.measureText(label).width + 40;
+      ctx.translate(x + 26, y - 20);
+      ctx.rotate((-2 * Math.PI) / 180);
+      roundRectPath(ctx, 0, 0, tagW, 40, 20);
+      ctx.fillStyle = labelColor;
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      ctx.fillStyle = "#3e3636";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, 20, 21);
+      ctx.restore();
     }
 
     async function downloadEndingPhotocard() {
@@ -1450,83 +1735,144 @@
       modal.classList.remove("hidden");
       previewWrap.innerHTML = `<span class="font-cute text-sm text-stone-500 animate-pulse">포토카드를 현상하는 중...</span>`;
 
+      const route = PHOTOCARD_ROUTES[selectedRoute] || PHOTOCARD_ROUTES.A;
+      const name = playerName;
+      const W = 720;
+      const PAD = 54;
+      const TEXT_W = W - PAD * 2 - 64;
+      const FONT = {
+        worry: "24px 'Jua', sans-serif",
+        headline: "bold 34px 'Jua', sans-serif",
+        body: "21px 'Noto Sans KR', sans-serif",
+        common: "26px 'Jua', sans-serif"
+      };
+
+      // 1) 문구 길이에 따라 줄 수가 달라지므로 먼저 측정해 전체 높이를 정한다.
       const canvas = document.createElement("canvas");
-      canvas.width = 720;
-      canvas.height = 920;
       const ctx = canvas.getContext("2d");
+      const measure = (font, text) => {
+        ctx.font = font;
+        return wrapText(ctx, text, TEXT_W);
+      };
+      const worryLines = measure(FONT.worry, `"${route.worry}"`);
+      const headLines = measure(FONT.headline, route.headline(name));
+      const bodyLines = measure(FONT.body, route.body(name));
+      const commonLines = measure(FONT.common, `${name}, 사랑해! 오늘도 힘내자 우리!!\u00a0💕`); //  : 줄바꿈 때 이모지만 다음 줄로 떨어지지 않게 붙여 둔다
 
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, 920);
-      bgGrad.addColorStop(0, "#fffdf7");
-      bgGrad.addColorStop(1, "#fde68a");
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 720, 920);
+      const worryBox = { x: PAD, y: 78, w: W - PAD * 2, h: 50 + worryLines.length * 36 };
+      const P = { x: PAD, y: worryBox.y + worryBox.h + 34, w: W - PAD * 2, h: 470 };
+      // 답장 말풍선 안의 세로 간격(px): 각 값은 이전 줄 기준선에서 다음 줄 기준선까지의 거리
+      const GAP = { top: 66, head: 44, headToBody: 40, body: 31, bodyToRule: 26, ruleToCommon: 44, common: 34, sign: 32, bottom: 26 };
+      const replyBox = {
+        x: PAD,
+        y: P.y + P.h + 52,
+        w: W - PAD * 2,
+        h: GAP.top + (headLines.length - 1) * GAP.head + GAP.headToBody + (bodyLines.length - 1) * GAP.body +
+          GAP.bodyToRule + GAP.ruleToCommon + (commonLines.length - 1) * GAP.common + GAP.sign + GAP.bottom
+      };
+      const H = replyBox.y + replyBox.h + 96;
+      canvas.width = W;
+      canvas.height = H;
 
+      // 2) 카드 바탕
+      const cardGrad = ctx.createLinearGradient(0, 0, 0, H);
+      cardGrad.addColorStop(0, "#fffdf7");
+      cardGrad.addColorStop(1, "#fde68a");
+      ctx.fillStyle = cardGrad;
+      ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = "#3e3636";
       ctx.lineWidth = 10;
-      ctx.strokeRect(24, 24, 672, 872);
+      ctx.strokeRect(24, 24, W - 48, H - 48);
 
-      ctx.fillStyle = "#472a19";
-      ctx.fillRect(54, 60, 612, 470);
-      const fireGlow = ctx.createRadialGradient(360, 320, 20, 360, 320, 260);
-      fireGlow.addColorStop(0, "rgba(253, 224, 71, 0.55)");
-      fireGlow.addColorStop(1, "rgba(71, 42, 25, 0)");
-      ctx.fillStyle = fireGlow;
-      ctx.fillRect(54, 60, 612, 470);
+      // 3) 사진 위: 사용자의 고민 말풍선
+      drawSpeechBubble(ctx, { ...worryBox, tail: "down", tailX: 150, label: `${name}의 고민`, labelColor: "#fde68a" });
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#57534e";
+      ctx.font = FONT.worry;
+      worryLines.forEach((line, i) => ctx.fillText(line, W / 2, worryBox.y + 50 + i * 36));
 
-      const order = [6, 1, 3, 5, 4, 2];
-      const charImages = await Promise.all(order.map((id) => {
-        return new Promise((resolve) => {
-          const rawSvg = serializeCharSVG(id);
-          const blob = new Blob([rawSvg], { type: "image/svg+xml;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = () => {
-            URL.revokeObjectURL(url);
-            resolve(img);
-          };
-          img.onerror = () => {
-            URL.revokeObjectURL(url);
-            resolve(null);
-          };
-          img.src = url;
-        });
-      }));
+      // 4) 단체 사진: 위로한 캐릭터가 앞줄 중앙에 선다. 캐릭터 이미지는 정사각형 비율을 유지한다.
+      ctx.save();
+      roundRectPath(ctx, P.x, P.y, P.w, P.h, 18);
+      ctx.clip();
+      drawCabinBackdrop(ctx, P);
 
-      charImages.forEach((img, idx) => {
+      const FOOT_RATIO = 0.91; // viewBox 260 기준 발끝 높이 비율
+      const bottom = P.y + P.h;
+      const backSlots = [
+        { cx: 240, footY: bottom - 84, size: 250, tilt: -7 },
+        { cx: 360, footY: bottom - 92, size: 250, tilt: 0 },
+        { cx: 480, footY: bottom - 84, size: 250, tilt: 6 }
+      ];
+      const frontSlots = [
+        { cx: 205, footY: bottom + 52, size: 285, tilt: -5 },
+        { cx: 360, footY: bottom + 50, size: 300, tilt: 2 },
+        { cx: 515, footY: bottom + 52, size: 285, tilt: 5 }
+      ];
+      // 앞줄 중앙(위로한 캐릭터)이 이웃과 겹칠 때 맨 앞에 오도록 가장 나중에 그린다.
+      const lineup = [
+        ...route.back.map((id, i) => ({ id, ...backSlots[i] })),
+        { id: route.front[0], ...frontSlots[0] },
+        { id: route.front[2], ...frontSlots[2] },
+        { id: route.front[1], ...frontSlots[1] }
+      ];
+      const images = await Promise.all(lineup.map((c) => loadCharImage(c.id, { smile: true, showFist: c.id === 3 })));
+      lineup.forEach((c, idx) => {
+        const img = images[idx];
         if (!img) return;
-        const x = 62 + idx * 98;
-        const y = 345;
-        ctx.fillStyle = "#d97706";
+        ctx.save();
+        ctx.translate(c.cx, c.footY);
+        ctx.fillStyle = "rgba(40, 20, 8, 0.28)";
         ctx.beginPath();
-        ctx.ellipse(x + 52, y + 148, 42, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, -4, c.size * 0.22, c.size * 0.045, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.drawImage(img, x, y, 106, 150);
+        ctx.rotate((c.tilt * Math.PI) / 180);
+        ctx.drawImage(img, -c.size / 2, -c.size * FOOT_RATIO, c.size, c.size);
+        ctx.restore();
       });
 
-      ctx.fillStyle = "#fef3c7";
-      ctx.font = "bold 24px 'Jua', sans-serif";
+      drawPhotoFinish(ctx, P);
+      ctx.restore();
+      roundRectPath(ctx, P.x, P.y, P.w, P.h, 18);
+      ctx.strokeStyle = "#3e3636";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // 5) 사진 아래: 위로한 캐릭터의 답장 + 동물즈 모두의 공통 인사
+      drawSpeechBubble(ctx, { ...replyBox, tail: "up", tailX: W - 170, label: route.speaker, labelColor: route.tagColor });
       ctx.textAlign = "center";
-      ctx.fillText("24/7 WITH YOU · WARM CABIN", 360, 115);
-
-      ctx.fillStyle = "#3e3636";
-      ctx.font = "bold 44px 'Jua', sans-serif";
-      ctx.fillText(`"${playerName}, 사랑해!"`, 360, 625);
-      ctx.font = "bold 36px 'Jua', sans-serif";
-      ctx.fillText("오늘도 힘내자 우리!! 💕", 360, 682);
-
-      const routeQuotes = {
-        A: "기 죽지 마! 연습하면 다 돼 진짜아 ✨",
-        B: "너는 우리의 꿈이고 희망인걸, 우리를 믿어요!",
-        C: "괜찮아, 굳이 행복하지 않아도 돼요 🥹"
+      const drawLines = (lines, font, color, startY, step) => {
+        ctx.font = font;
+        ctx.fillStyle = color;
+        lines.forEach((line, i) => ctx.fillText(line, W / 2, startY + i * step));
+        return startY + (lines.length - 1) * step; // 마지막 줄 기준선
       };
-      ctx.fillStyle = "#78350f";
-      ctx.font = "22px 'Noto Sans KR', sans-serif";
-      ctx.fillText(routeQuotes[selectedRoute] || routeQuotes.A, 360, 745);
+      let ty = drawLines(headLines, FONT.headline, "#3e3636", replyBox.y + GAP.top, GAP.head);
+      ty = drawLines(bodyLines, FONT.body, "#78350f", ty + GAP.headToBody, GAP.body);
 
+      ty += GAP.bodyToRule;
+      ctx.strokeStyle = "#e7c9a0";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 7]);
+      ctx.beginPath();
+      ctx.moveTo(replyBox.x + 40, ty);
+      ctx.lineTo(replyBox.x + replyBox.w - 40, ty);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ty = drawLines(commonLines, FONT.common, "#be185d", ty + GAP.ruleToCommon, GAP.common);
+      ctx.fillStyle = "#a8a29e";
+      ctx.font = "17px 'Noto Sans KR', sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText("— 오두막의 동물즈 모두가 🐾", replyBox.x + replyBox.w - 34, ty + GAP.sign);
+
+      // 6) 하단 날짜
       const today = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+      ctx.textAlign = "center";
       ctx.fillStyle = "#78716c";
       ctx.font = "18px 'Noto Sans KR', sans-serif";
-      ctx.fillText(`${today} · 마음의 오두막에서`, 360, 845);
+      ctx.fillText(`${today} · 마음의 오두막에서`, W / 2, H - 52);
 
       const dataUrl = canvas.toDataURL("image/png");
       downloadLink.href = dataUrl;
