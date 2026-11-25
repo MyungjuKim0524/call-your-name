@@ -1542,20 +1542,22 @@
           ctx.fill();
         });
 
-      // 현판
+      // 현판 (오프닝 화면의 부제와 같은 문구, 글자 길이에 맞춰 너비 결정)
+      const plaqueText = "24/7 WITH YOU · CALL YOUR NAME";
+      ctx.font = "bold 24px 'Jua', sans-serif";
+      const plaqueW = ctx.measureText(plaqueText).width + 52;
       ctx.fillStyle = "#3e2518";
       ctx.fillRect(P.x + P.w / 2 - 2, P.y, 4, 24);
-      roundRectPath(ctx, P.x + P.w / 2 - 170, P.y + 22, 340, 50, 12);
+      roundRectPath(ctx, P.x + P.w / 2 - plaqueW / 2, P.y + 22, plaqueW, 50, 12);
       ctx.fillStyle = "#fef3c7";
       ctx.fill();
       ctx.strokeStyle = "#3e3636";
       ctx.lineWidth = 4;
       ctx.stroke();
       ctx.fillStyle = "#92400e";
-      ctx.font = "bold 24px 'Jua', sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("24/7 WITH YOU · WARM CABIN", P.x + P.w / 2, P.y + 48);
+      ctx.fillText(plaqueText, P.x + P.w / 2, P.y + 48);
       ctx.textBaseline = "alphabetic";
 
       // 전구 가랜드 (2차 베지어 곡선 위에 전구 배치)
