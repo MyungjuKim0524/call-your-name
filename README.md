@@ -156,9 +156,29 @@ flowchart LR
 
 전체 설정은 [supabase/schema.sql](supabase/schema.sql)에 있습니다.
 
+**공개 키에 대하여**: `index.html`에 있는 Supabase 키는 브라우저에 공개하도록 설계된 publishable key입니다. 방명록 데이터의 접근 제어는 키를 숨기는 방식이 아니라 위의 RLS 정책과 권한 설정으로 합니다. 관리자 권한을 가진 secret key(service_role)는 코드에 포함하지 않습니다.
+
 ## 8. 로컬 실행 방법
 
 현재 소스는 HTML, CSS, JavaScript를 단일 HTML 파일에 포함한 구조이며, 별도의 npm 패키지 설치 또는 빌드 과정이 필요하지 않습니다.
+
+### 저장소 구조
+
+```text
+call-your-name/
+├── index.html              # 서비스 전체 (HTML·CSS·JS 단일 파일, Vercel 배포 진입점)
+├── supabase/
+│   └── schema.sql          # 방명록 테이블, RLS 정책, 권한 설정
+└── docs/
+    ├── planning.md         # 기획서
+    ├── storyboard.md       # 스토리보드 (콘티 ↔ 구현 대조)
+    ├── characters.md       # 캐릭터 정의서
+    ├── ai-collaboration.md # AI 협업 기록
+    ├── troubleshooting.md  # 트러블슈팅
+    └── assets/
+        ├── handwritten/    # 손그림 콘티, 손글씨 캐릭터 시트 원본
+        └── screenshots/    # 화면 미리보기
+```
 
 ### 실행
 
