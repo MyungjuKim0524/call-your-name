@@ -87,7 +87,7 @@ P0: 4주 기준 핵심 출시 목표. P1: P0 안정화 후 기간 내 선택. P2
 | JUnit, PostgreSQL/Redis 통합 테스트, pytest, Playwright, k6 | DB 실물 검증, AI 평가, UI 회귀, SSE/부하 측정 | 모의 DB만으로 동시성 검증하지 않음; 도구 호환성은 Phase 0 확인 |
 | Docker, GitHub Actions | 재현성 및 CI/CD | 수동 배포만 하는 방식보다 반복 검증 가능; 무료 실행 한도 확인 |
 
-DB 공급자: V2 문서에는 기존 Supabase 우선이 명시되어 있다. Neon은 추천 후보이며 이전 시점은 명시적 확정이 없으므로 **V3 착수 때 실제 V2 DB를 기준으로 유지**, 사용자 승인 시 Neon으로 이전한다. 사용자 보유 Supabase 1개/Neon 2개 프로젝트 정보만으로 가용 쿼터를 단정하지 않는다. 공식 가격표(https://supabase.com/pricing, https://neon.com/pricing)와 계정 대시보드 확인 후 결정한다. V2 문서는 이번 산출물에서 변경하지 않는다.
+DB 공급자: V2 문서에는 기존 Supabase 우선이 명시되어 있다. Neon은 추천 후보이며 이전 시점은 명시적 확정이 없으므로 **V3 착수 때 실제 V2 DB를 기준으로 유지**, 사용자 승인 시 Neon으로 이전한다. 보유 프로젝트 수만으로 가용 쿼터를 단정하지 않는다. 공식 가격표(https://supabase.com/pricing, https://neon.com/pricing)와 계정 대시보드 확인 후 결정한다. V2 문서는 이번 산출물에서 변경하지 않는다.
 
 ## 5. 목표 아키텍처
 
