@@ -2,7 +2,7 @@
 
 손으로 그린 13개 장면 콘티와 실제 구현을 장면 단위로 대조한 문서입니다.
 
-- 원본 콘티: [1~10번 장면](./assets/handwritten/storyboard-scenes-01-10.jpg) · [11~13번 장면](./assets/handwritten/storyboard-scenes-11-13.jpg)
+- 원본 콘티: [1~10번 장면](../../assets/handwritten/storyboard-scenes-01-10.jpg) · [11~13번 장면](../../assets/handwritten/storyboard-scenes-11-13.jpg)
 - 캐릭터 번호는 [캐릭터 정의서](./characters.md)를 따릅니다.
 
 ---
