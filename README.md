@@ -6,7 +6,7 @@
 https://github.com/user-attachments/assets/75c161bf-de0d-47e9-bf40-914ae8d8ed19
 
 
-[Live Demo](https://call-your-name.vercel.app/) · [기획서](docs/planning.md) · [스토리보드](docs/storyboard.md) · [캐릭터 정의서](docs/characters.md) · [AI 협업 기록](docs/ai-collaboration.md) · [트러블슈팅](docs/troubleshooting.md)
+[Live Demo](https://call-your-name.vercel.app/) · [기획서](docs/archive/v1/planning.md) · [스토리보드](docs/archive/v1/storyboard.md) · [캐릭터 정의서](docs/archive/v1/characters.md) · [AI 협업 기록](docs/archive/v1/ai-collaboration.md) · [트러블슈팅](docs/archive/v1/troubleshooting.md)
 
 ## 1. 프로젝트 소개
 
@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/75c161bf-de0d-47e9-bf40-914ae8d8ed19
 
 - **핵심 콘셉트**: 나를 믿어 줄 것 같은 누군가가 내 이름을 불러 주는 것만으로도 큰 위로가 될 수 있다
 - **타깃**: 1차 투어스의 팬, 2차 불안하고 방황하는 20~30대
-- 기획 의도와 설계 근거는 [기획서](docs/planning.md)에 정리했습니다.
+- 기획 의도와 설계 근거는 [기획서](docs/archive/v1/planning.md)에 정리했습니다.
 
 | 항목 | 내용 |
 | --- | --- |
@@ -88,11 +88,11 @@ flowchart TD
 | --- | --- | --- |
 | 운영 비용 | Vercel Hobby, Supabase 무료 플랜, 유료 API 미사용 | 개인 프로젝트를 비용 부담 없이 계속 운영할 수 있도록 **무료로 구현 가능한 범위**를 기능 선정 기준으로 정함 |
 | 구현 방식 | 단일 HTML + Vanilla JS, 빌드 과정 없음 | Gemini Canvas가 결과물을 단일 HTML 파일로 만들고, 빌드 없이 Vercel 정적 호스팅에 바로 배포할 수 있음. 로직이 한 파일에 몰리는 한계는 [향후 개선](#11-알려진-결함-및-향후-개선-방향)에 포함 |
-| 시나리오 관리 | FSM (`SCENARIO_GRAPH`) | 장면별 화자·대사·캐릭터·다음 상태를 데이터로 분리해, 장면을 고칠 때 렌더링 로직을 건드리지 않도록 함. AI가 함께 제안한 엔딩 수집 요소는 “위로받는 경험”과 맞지 않아 제외 ([의사결정 기록](docs/ai-collaboration.md#4-ai-제안에-대한-의사결정)) |
+| 시나리오 관리 | FSM (`SCENARIO_GRAPH`) | 장면별 화자·대사·캐릭터·다음 상태를 데이터로 분리해, 장면을 고칠 때 렌더링 로직을 건드리지 않도록 함. AI가 함께 제안한 엔딩 수집 요소는 “위로받는 경험”과 맞지 않아 제외 ([의사결정 기록](docs/archive/v1/ai-collaboration.md#4-ai-제안에-대한-의사결정)) |
 | 방명록 | Supabase (PostgreSQL + Realtime) | 방명록은 작성자·배지·메시지·작성 시각이 정해진 정형 데이터라 관계형 DB가 적합함. 메시지 길이(1~60자)와 필수값을 DB 제약조건으로 강제하고, 조회·작성만 허용하는 권한을 RLS 정책으로 선언할 수 있음([스키마](supabase/schema.sql)). 표준 SQL 기반이라 다른 PostgreSQL 환경으로 옮기기 쉬움 |
 | 사운드 | Tone.js 합성 | 플레이 내내 잔잔한 배경 음악(통기타·모닥불)과 효과음을 넣되, 원곡 음원이나 별도 음원 파일 없이 브라우저에서 합성 |
 | 금칙어 필터 | Trie | 검사 시간이 금칙어 개수와 무관하게 입력 길이(M)와 가장 긴 금칙어 길이(L)에만 비례(O(M×L))하도록 설계. 트리에 없는 글자가 나오면 즉시 비교를 멈춤. 현재 금칙어는 8개로, 성능 이점은 사전 확장에 대비한 설계임 |
-| 방명록 익명화 | 작성자 이름을 수집하지 않음 | 이름을 불러주는 서비스라 실명을 입력하는 사용자가 많을 수 있음. 고민 상담 콘셉트상 자신의 고민이 드러나는 것을 꺼릴 수 있고, 감성적인 응원 글에 이름이 붙으면 쑥스러울 수 있음. 화면에서만 숨기지 않고 저장·조회 단계에서도 이름을 다루지 않음([TS-05](docs/troubleshooting.md#ts-05-익명-방명록인데-작성자-이름이-저장되고-조회됨)) |
+| 방명록 익명화 | 작성자 이름을 수집하지 않음 | 이름을 불러주는 서비스라 실명을 입력하는 사용자가 많을 수 있음. 고민 상담 콘셉트상 자신의 고민이 드러나는 것을 꺼릴 수 있고, 감성적인 응원 글에 이름이 붙으면 쑥스러울 수 있음. 화면에서만 숨기지 않고 저장·조회 단계에서도 이름을 다루지 않음([TS-05](docs/archive/v1/troubleshooting.md#ts-05-익명-방명록인데-작성자-이름이-저장되고-조회됨)) |
 
 ## 5. 시스템 아키텍처
 
@@ -137,7 +137,7 @@ flowchart LR
 - SVG 캐릭터를 Blob 및 이미지 객체로 변환하고 Canvas API에서 배경 및 문구와 합성합니다.
 - 포토카드 문구와 캐릭터 배치는 고민 경로별 설정 데이터(`PHOTOCARD_ROUTES`)로 관리합니다. 사용자가 고른 고민, 위로한 캐릭터의 답장, 앞줄 중앙에 설 캐릭터가 경로마다 달라집니다.
 - 이름 끝 글자의 받침 유무로 은/는, 을/를을 자동 선택하고, 문구 길이에 맞춰 줄바꿈과 카드 높이를 계산합니다.
-- 이미지로 분리된 SVG는 페이지의 공용 필터를 참조할 수 없으므로, 변환 전에 공용 `<defs>`를 각 SVG에 포함합니다. 이 처리가 없으면 iPhone Safari에서 캐릭터가 사라집니다. ([TS-04](docs/troubleshooting.md#ts-04-iphone-safari에서-포토카드-캐릭터가-표시되지-않음))
+- 이미지로 분리된 SVG는 페이지의 공용 필터를 참조할 수 없으므로, 변환 전에 공용 `<defs>`를 각 SVG에 포함합니다. 이 처리가 없으면 iPhone Safari에서 캐릭터가 사라집니다. ([TS-04](docs/archive/v1/troubleshooting.md#ts-04-iphone-safari에서-포토카드-캐릭터가-표시되지-않음))
 - Tone.js의 신시사이저와 노이즈 합성을 활용하여 별도의 음원 파일 없이 사운드를 생성합니다.
 
 ## 7. 데이터베이스 구조
@@ -172,15 +172,27 @@ flowchart LR
 
 ```text
 call-your-name/
-├── index.html              # 서비스 전체 (HTML·CSS·JS 단일 파일, Vercel 배포 진입점)
+├── index.html              # v1 서비스 전체 (HTML·CSS·JS 단일 파일, Vercel 배포 진입점)
 ├── supabase/
 │   └── schema.sql          # 방명록 테이블, RLS 정책, 권한 설정
+├── AGENTS.md               # AI 에이전트 작업 규칙
+├── .env.example            # 환경 변수 키 목록
+├── docker-compose.yml      # 로컬 개발 환경 (v2·v3)
+├── backend/                # v2 백엔드
+├── frontend/               # v2 프론트엔드
+├── ai/                     # v3 AI 연출 서비스 (FastAPI)
+├── .github/workflows/      # CI
 └── docs/
-    ├── planning.md         # 기획서
-    ├── storyboard.md       # 스토리보드 (콘티 ↔ 구현 대조)
-    ├── characters.md       # 캐릭터 정의서
-    ├── ai-collaboration.md # AI 협업 기록
-    ├── troubleshooting.md  # 트러블슈팅
+    ├── CURRENT_STATE.md    # 현재 상태
+    ├── ARCHITECTURE.md · SECURITY.md · DECISIONS.md · ERD.md · API.md
+    ├── planning/           # PLANNING_V2.md, PRD_V2.md, PLANNING_V3.md, PRD_V3.md
+    ├── design/             # SCREEN_DESIGN.md, SCENARIO.md, INTERACTION_DESIGN.md
+    ├── tasks/              # active.md, backlog.md
+    ├── testing/            # TEST_PLAN.md, TEST_REPORT.md
+    ├── archive/
+    │   ├── v1/             # v1 문서 (기획서, 스토리보드, 캐릭터 정의서, AI 협업 기록, 트러블슈팅)
+    │   ├── v2/             # v2 페이즈별 기록 (phase-XX.md)
+    │   └── v3/             # v3 페이즈별 기록 (phase-XX.md)
     └── assets/
         ├── handwritten/    # 손그림 콘티, 손글씨 캐릭터 시트 원본
         └── screenshots/    # 화면 미리보기
@@ -233,7 +245,7 @@ AI를 활용해 그래픽과 코드를 생성하고, 기획 의도에 부합하�
 - **윤리적 판단으로 반려**: 캐릭터별 목소리 합성 제안은, 당사자 동의 없이 실존 인물의 목소리를 모방하게 된다는 이유로 채택하지 않았습니다.
 - **AI 오류를 직접 발견**: 존재하지 않는 CSS 클래스로 인한 캐릭터 겹침, 방명록 저장 실패 진단 오류, 기본 메시지가 사라지는 로직 등을 실행 화면과 실사용으로 찾아냈습니다.
 
-실제 프롬프트, 의사결정, AI 오류 사례는 [AI 협업 기록](docs/ai-collaboration.md)에 정리했습니다.
+실제 프롬프트, 의사결정, AI 오류 사례는 [AI 협업 기록](docs/archive/v1/ai-collaboration.md)에 정리했습니다.
 
 ## 10. 구현 결과 및 검증
 
@@ -260,7 +272,7 @@ AI를 활용해 그래픽과 코드를 생성하고, 기획 의도에 부합하�
 
 위 개선 방향은 향후 계획이며 완료된 기능이 아닙니다.
 
-해결된 결함: iPhone Safari에서 포토카드 캐릭터가 표시되지 않던 문제 ([TS-04](docs/troubleshooting.md#ts-04-iphone-safari에서-포토카드-캐릭터가-표시되지-않음), PR #1). 그 밖의 해결 과정은 [트러블슈팅](docs/troubleshooting.md)에 정리했습니다.
+해결된 결함: iPhone Safari에서 포토카드 캐릭터가 표시되지 않던 문제 ([TS-04](docs/archive/v1/troubleshooting.md#ts-04-iphone-safari에서-포토카드-캐릭터가-표시되지-않음), PR #1). 그 밖의 해결 과정은 [트러블슈팅](docs/archive/v1/troubleshooting.md)에 정리했습니다.
 
 ## 12. 콘텐츠 안내
 

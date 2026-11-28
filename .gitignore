@@ -4,6 +4,7 @@
 # 환경 변수 파일
 .env
 .env.*
+!.env.example
 
 # 운영체제·에디터 생성 파일
 .DS_Store

@@ -2,7 +2,7 @@
 
 6종 캐릭터의 설정, 손글씨 정의가 실제 그림으로 구현된 방식, 그리고 그림체를 다듬은 과정을 기록합니다.
 
-- 원본 설정 메모: [손글씨 캐릭터 시트](./assets/handwritten/character-sheet.jpg)
+- 원본 설정 메모: [손글씨 캐릭터 시트](../../assets/handwritten/character-sheet.jpg)
 - 캐릭터 그래픽은 손글씨 정의를 바탕으로 Gemini Canvas가 SVG로 생성하고, 직접 검수하며 수정했습니다.
 
 ---
